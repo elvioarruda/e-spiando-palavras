@@ -1,0 +1,17 @@
+{
+  "short_name": "ESpiando",
+  "name": "E-Spiando Palavras",
+  "description": "Gerador de caça-palavras totalmente offline e personalizado.",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192 512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#0f172a",
+  "theme_color": "#4f46e5",
+  "display": "standalone",
+  "orientation": "portrait-primary"
+}

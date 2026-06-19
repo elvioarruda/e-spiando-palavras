@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="brandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1" />
+      <stop offset="100%" stop-color="#4f46e5" />
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f43f5e" />
+      <stop offset="100%" stop-color="#e11d48" />
+    </linearGradient>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#0f172a" flood-opacity="0.3" />
+    </filter>
+  </defs>
+  
+  <!-- Outer Rounded Square Background -->
+  <rect width="512" height="512" rx="112" fill="url(#brandGrad)" />
+  
+  <!-- Subtle Grid Lines overlay -->
+  <path d="M 128 48 L 128 464 M 256 48 L 256 464 M 384 48 L 384 464" stroke="#ffffff" stroke-width="4" stroke-opacity="0.1" stroke-linecap="round" />
+  <path d="M 48 128 L 464 128 M 48 256 L 464 256 M 48 384 L 464 384" stroke="#ffffff" stroke-width="4" stroke-opacity="0.1" stroke-linecap="round" />
+  
+  <!-- Interactive Highland Diagonal Trace -->
+  <rect x="76" y="224" width="360" height="64" rx="32" transform="rotate(45 256 256)" fill="url(#accentGrad)" filter="url(#shadow)" />
+  
+  <!-- Decorative Grid Letters (C, A, C, A) -->
+  <g fill="#ffffff" font-family="'Inter', sans-serif" font-weight="900" font-size="96" text-anchor="middle" dominant-baseline="central">
+    <!-- Row 1 -->
+    <text x="128" y="128" fill-opacity="0.9">C</text>
+    <text x="256" y="128" fill-opacity="0.4">P</text>
+    <text x="384" y="128" fill-opacity="0.4">I</text>
+    
+    <!-- Row 2 -->
+    <text x="128" y="256" fill-opacity="0.4">M</text>
+    <text x="256" y="256" fill-opacity="1">A</text>
+    <text x="384" y="256" fill-opacity="0.4">L</text>
+    
+    <!-- Row 3 -->
+    <text x="128" y="384" fill-opacity="0.4">G</text>
+    <text x="256" y="384" fill-opacity="0.4">O</text>
+    <text x="384" y="384" fill-opacity="1">C</text>
+  </g>
+</svg>
