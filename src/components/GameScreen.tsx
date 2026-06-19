@@ -91,6 +91,7 @@ export default function GameScreen({
 
   // Hints helper: highlighted coords
   const [hintHighlightedCell, setHintHighlightedCell] = useState<Position | null>(null);
+  const [hintCycleIndex, setHintCycleIndex] = useState<number>(0);
   const hintTimeoutRef = useRef<any>(null);
 
   // Clean up hint timeout on unmount
@@ -447,25 +448,31 @@ export default function GameScreen({
   const handleTriggerHint = () => {
     if (hintsUsed >= maxHints || !isPlaying) return;
 
-    // Find the first word that hasn't been solved
-    const unsolvedWord = words.find(w => !w.isFound);
-    if (unsolvedWord && unsolvedWord.path.length > 0) {
+    // Find all unsolved words
+    const unsolvedWords = words.filter(w => !w.isFound);
+    if (unsolvedWords.length > 0) {
       // Clear any pending timeout first
       if (hintTimeoutRef.current) {
         clearTimeout(hintTimeoutRef.current);
       }
 
-      // Highlight the first letter coordinate!
-      const targetCell = unsolvedWord.path[0];
-      setHintHighlightedCell(targetCell);
-      setHintsUsed(p => p + 1);
-      AudioSynthesizer.playHint();
+      // Pick the unsolved word based on hintCycleIndex
+      const unsolvedWord = unsolvedWords[hintCycleIndex % unsolvedWords.length];
 
-      // Clear highlight after 8 seconds (or until user interacts/clicks)
-      hintTimeoutRef.current = setTimeout(() => {
-        setHintHighlightedCell(null);
-        hintTimeoutRef.current = null;
-      }, 8000);
+      if (unsolvedWord && unsolvedWord.path.length > 0) {
+        // Highlight the first letter coordinate!
+        const targetCell = unsolvedWord.path[0];
+        setHintHighlightedCell(targetCell);
+        setHintsUsed(p => p + 1);
+        setHintCycleIndex(p => p + 1);
+        AudioSynthesizer.playHint();
+
+        // Clear highlight after 8 seconds (or until user interacts/clicks)
+        hintTimeoutRef.current = setTimeout(() => {
+          setHintHighlightedCell(null);
+          hintTimeoutRef.current = null;
+        }, 8000);
+      }
     }
   };
 
@@ -699,10 +706,10 @@ export default function GameScreen({
                   
                   if (isSelectTrail) {
                     styleClasses += "bg-blue-600 text-white border-blue-500 scale-[0.96] shadow-md shadow-blue-600/30 font-extrabold z-10 ";
-                  } else if (foundColor) {
-                    styleClasses += `${foundColor} border-transparent font-black `;
                   } else if (isHinted) {
                     styleClasses += "bg-amber-100 dark:bg-amber-950/80 text-amber-950 dark:text-amber-100 border-4 border-amber-500 dark:border-amber-400 font-extrabold scale-110 shadow-lg shadow-amber-500/50 animate-pulse z-10 ";
+                  } else if (foundColor) {
+                    styleClasses += `${foundColor} border-transparent font-black `;
                   } else {
                     styleClasses += "bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 border-slate-200 dark:border-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs ";
                   }

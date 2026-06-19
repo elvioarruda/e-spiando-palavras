@@ -14,7 +14,7 @@ export default function AboutPanel({ onBack, settings }: AboutPanelProps) {
         <Gamepad2 className="w-8 h-8 text-blue-600 dark:text-blue-400" />
         <div>
           <h2 className="text-2xl font-extrabold font-display tracking-tight text-slate-800 dark:text-white">Sobre o Jogo</h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400">E-Spiando Palavras v1.0.0</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">e-Spiando Palavras v1.0.0</p>
         </div>
       </div>
 
@@ -25,7 +25,7 @@ export default function AboutPanel({ onBack, settings }: AboutPanelProps) {
             <Info className="w-4 h-4" /> Proposta
           </h3>
           <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-            O <strong>E-Spiando Palavras</strong> é um aplicativo moderno desenvolvido em formato
+            O <strong>e-Spiando Palavras</strong> é um aplicativo moderno desenvolvido em formato
             <strong> Progressive Web App (PWA)</strong>, projetado para operar <strong>100% offline</strong> após instalado,
             com um banco inteligente de busca de temas integrados de alta qualidade.
           </p>

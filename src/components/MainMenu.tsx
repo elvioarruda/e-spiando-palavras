@@ -160,10 +160,13 @@ export default function MainMenu({
           <Gamepad2 className="w-12 h-12 text-blue-600 dark:text-blue-400" />
         </div>
         <h1 className="text-3xl md:text-4xl font-extrabold font-display tracking-tight text-slate-800 dark:text-white select-none">
-          E-Spiando <span className="text-blue-600 dark:text-blue-400">Palavras</span>
+          e-Spiando <span className="text-blue-600 dark:text-blue-400">Palavras</span>
         </h1>
         <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 mt-2 max-w-sm mx-auto leading-relaxed">
           Crie infinitos quebra-cabeças sob medida! Divirta-se jogando totalmente de forma estática offline e com temas integrados.
+        </p>
+        <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1.5 font-medium">
+          Desenvolvido por Élvio A. de Arruda &bull; <a href="mailto:elvio.desenvolvimento@gmail.com" className="text-blue-500 hover:underline dark:text-blue-400 select-all">elvio.desenvolvimento@gmail.com</a>
         </p>
 
 

@@ -206,7 +206,30 @@ export default function App() {
       setIsCustom(true);
       setThemeName("Lista Personalizada");
       
-      const result = generateGrid(config.customWords, config.difficulty);
+      // Shuffle & keep unique custom words
+      let finalWords = [...config.customWords].sort(() => 0.5 - Math.random());
+      
+      if (finalWords.length > wordCount) {
+        finalWords = finalWords.slice(0, wordCount);
+      } else if (finalWords.length < wordCount) {
+        // Need to pad. Gather all words from local themes
+        const themesKeys = Object.keys(embeddedThemes);
+        const allWordsPool: string[] = [];
+        themesKeys.forEach(tKey => {
+          allWordsPool.push(...embeddedThemes[tKey]);
+        });
+        
+        // Clean, shuffle and get unique new words that are not already present
+        const cleanedPool = Array.from(new Set(allWordsPool.map(w => cleanWord(w))))
+          .filter(w => w.length >= 4 && w.length <= 15 && !finalWords.includes(w))
+          .sort(() => 0.5 - Math.random());
+          
+        const needed = wordCount - finalWords.length;
+        const paddingWords = cleanedPool.slice(0, needed);
+        finalWords = [...finalWords, ...paddingWords];
+      }
+      
+      const result = generateGrid(finalWords, config.difficulty);
       setActiveGrid(result.grid);
       setActiveWords(result.wordStates);
       setScreen("playing");
@@ -364,7 +387,7 @@ export default function App() {
               <div>
                 <span>Buscando palavras no banco offline ({errorDetails || "Local"}).</span>
                 <p className="text-[10px] text-amber-400/80 mt-1 font-normal">
-                  Carregando tema do banco offline nativo do E-Spiando Palavras... Carregando palavras do tema!
+                  Carregando tema do banco offline nativo do e-Spiando Palavras... Carregando palavras do tema!
                 </p>
               </div>
             </div>

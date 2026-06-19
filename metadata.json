@@ -1,5 +1,5 @@
 {
-  "name": "E-Spiando Palavras",
+  "name": "e-Spiando Palavras",
   "description": "Um aplicativo progressivo de caça-palavras totalmente offline com múltiplos temas, modos de jogo e dicionário integrado.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

@@ -241,7 +241,7 @@ Regras estritas:
   }
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`[E-Spiando Palavras] Servidor rodando na porta ${PORT} em modo ${process.env.NODE_ENV || "dev"}`);
+    console.log(`[e-Spiando Palavras] Servidor rodando na porta ${PORT} em modo ${process.env.NODE_ENV || "dev"}`);
   });
 }
 

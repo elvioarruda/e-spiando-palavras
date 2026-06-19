@@ -1,5 +1,5 @@
 /**
- * Banco de palavras embarcado offline para o E-Spiando Palavras.
+ * Banco de palavras embarcado offline para o e-Spiando Palavras.
  * Contém exatamente 10 temas com 100 palavras cada (totalizando 1000 palavras).
  * Todas as palavras estão pré-limpas (sem acentos, sem cedilha, sem hifens ou espaços, em caixa alta).
  */

@@ -1,5 +1,5 @@
 /**
- * Service Worker para o E-Spiando Palavras.
+ * Service Worker para o e-Spiando Palavras.
  * Garante funcionamento 100% offline do PWA de forma dinâmica.
  */
 
