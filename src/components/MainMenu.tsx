@@ -166,11 +166,7 @@ export default function MainMenu({
           Crie infinitos quebra-cabeças sob medida! Divirta-se jogando totalmente de forma estática offline e com temas integrados.
         </p>
 
-        {/* Connectivity badge */}
-        <div className="inline-flex items-center gap-1.5 mt-4 px-3.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800">
-          <CheckCircle className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />
-          <span className="text-emerald-700 dark:text-emerald-400 font-extrabold">Modo 100% Offline e Estático Ativo</span>
-        </div>
+
       </header>
 
       {/* Primary List of Menu Options */}
@@ -284,7 +280,7 @@ export default function MainMenu({
                     : "bg-slate-50 dark:bg-slate-800/40 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:bg-slate-100/75"
                 }`}
               >
-                <FileText className="w-3.5 h-3.5" /> Lista Customizada
+                <FileText className="w-3.5 h-3.5" /> Lista Personalizada
               </button>
             </div>
           </div>
@@ -292,71 +288,24 @@ export default function MainMenu({
           {/* Mode 1 Layout */}
           {mode === "theme" ? (
             <div className="space-y-3 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsCustomThemeSelected(false)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    !isCustomThemeSelected
-                      ? "bg-blue-600 text-white"
-                      : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700"
-                  }`}
-                >
-                  Temas Nativos
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsCustomThemeSelected(true)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
-                    isCustomThemeSelected
-                      ? "bg-blue-600 text-white"
-                      : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700"
-                  }`}
-                >
-                  <Brain className="w-3 h-3" /> Outro Tema (Banco Local)
-                </button>
+              <div className="space-y-1.5">
+                <label className="text-[10px] text-slate-700 dark:text-slate-300 uppercase tracking-widest block font-bold">Escolha uma Categoria Nativa:</label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-1.5 max-h-40 overflow-y-auto pr-1 no-scrollbar border border-slate-200 dark:border-slate-700 rounded-lg p-2 bg-white dark:bg-slate-900/40">
+                  {DEFAULT_THEMES.map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => setSelectedTheme(t)}
+                      className={`py-1.5 px-2 rounded-lg text-xs text-left font-semibold capitalize truncate transition-all cursor-pointer border ${
+                        selectedTheme === t
+                          ? "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30"
+                          : "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700"
+                      }`}
+                    >
+                      {selectedTheme === t && "✓ "} {t.toLowerCase()}
+                    </button>
+                  ))}
+                </div>
               </div>
- 
-              {!isCustomThemeSelected ? (
-                <div className="space-y-1.5">
-                  <label className="text-[10px] text-slate-700 dark:text-slate-300 uppercase tracking-widest block font-bold">Escolha uma Categoria:</label>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-1.5 max-h-40 overflow-y-auto pr-1 no-scrollbar border border-slate-200 dark:border-slate-700 rounded-lg p-2 bg-white dark:bg-slate-900/40">
-                    {DEFAULT_THEMES.map((t) => (
-                      <button
-                        key={t}
-                        onClick={() => setSelectedTheme(t)}
-                        className={`py-1.5 px-2 rounded-lg text-xs text-left font-semibold capitalize truncate transition-all cursor-pointer border ${
-                          selectedTheme === t
-                            ? "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30"
-                            : "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700"
-                        }`}
-                      >
-                        {selectedTheme === t && "✓ "} {t.toLowerCase()}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-1.5">
-                  <label className="text-[10px] text-slate-700 dark:text-slate-300 uppercase tracking-widest block font-bold">Digite qualquer tema de sua cabeça:</label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      maxLength={30}
-                      placeholder="Ex: Mitologia Grega, Peixes de Aquário, Doces..."
-                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg py-2.5 px-3.5 text-sm text-slate-800 dark:text-white placeholder-slate-500 dark:placeholder-slate-300 outline-none focus:border-blue-500"
-                      value={customThemeText}
-                      onChange={(e) => setCustomThemeText(e.target.value)}
-                    />
-                    <div className="absolute right-2.5 top-2.5 flex items-center gap-1 text-[10px] text-blue-600 dark:text-blue-400 font-bold uppercase">
-                      <Sparkles className="w-4 h-4 animate-bounce" /> Local
-                    </div>
-                  </div>
-                  <p className="text-[10px] text-slate-700 dark:text-slate-300 leading-tight font-medium">
-                    * Busque de forma livre: nosso mapeador inteligente buscará em frações de segundos a melhor correspondência em nosso pacote de temas locais!
-                  </p>
-                </div>
-              )}
             </div>
           ) : (
             /* Mode 2 Layout */
