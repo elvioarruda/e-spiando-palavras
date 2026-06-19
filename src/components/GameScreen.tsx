@@ -267,6 +267,12 @@ export default function GameScreen({
 
   const handleDragMove = (e: React.MouseEvent | React.TouchEvent) => {
     if (!isDragging || !isPlaying) return;
+    
+    // Evitar scroll nativo da página apenas enquanto o jogador realiza a seleção na matriz
+    if (e.cancelable) {
+      e.preventDefault();
+    }
+
     const cell = getCellFromEvent(e);
     if (cell) {
       if (!dragCurrent || dragCurrent.row !== cell.row || dragCurrent.col !== cell.col) {
@@ -640,7 +646,7 @@ export default function GameScreen({
         
         {/* Play stage container */}
         <div className="w-full flex justify-center">
-          <div className="relative w-full select-none touch-none bg-slate-50 dark:bg-slate-900/40 p-3 md:p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg">
+          <div className="relative w-full select-none bg-slate-50 dark:bg-slate-900/40 p-3 md:p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg">
             
             {/* Interactive Hint Banner with Lightbulb above the matrix */}
             <div className="flex items-center justify-between bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-2.5 mb-3.5 shadow-xs select-none">
@@ -689,7 +695,7 @@ export default function GameScreen({
 
             {/* Play area grid */}
             <div
-              className="grid gap-1 cell-aspect-square outline-none"
+              className="grid gap-1 cell-aspect-square outline-none touch-none"
               style={{ gridTemplateColumns: `repeat(${size}, minmax(0, 1fr))` }}
               onMouseLeave={handleDragEnd}
               onMouseUp={handleDragEnd}

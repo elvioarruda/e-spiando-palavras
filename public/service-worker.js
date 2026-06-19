@@ -40,6 +40,11 @@ self.addEventListener("activate", (event) => {
 
 // Interpolação e estratégia Cache-First com Fallback de Rede (ou Network-First para páginas)
 self.addEventListener("fetch", (event) => {
+  // Ignorar requisições com esquemas não aceitos pelo Cache Storage (como chrome-extension, file://, app://, etc)
+  if (!event.request.url.startsWith("http")) {
+    return;
+  }
+
   // Ignorar requisições da própria API do Gemini ou servidor Backend do GCP
   if (event.request.url.includes("/api/")) {
     return;
@@ -75,7 +80,8 @@ self.addEventListener("fetch", (event) => {
         })
         .catch(() => {
           // Fallback offline se for um HTML
-          if (event.request.headers.get("accept").includes("text/html")) {
+          const acceptHeader = event.request.headers.get("accept");
+          if (acceptHeader && acceptHeader.includes("text/html")) {
             return caches.match("/index.html");
           }
         });
