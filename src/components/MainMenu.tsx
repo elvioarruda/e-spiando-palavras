@@ -70,6 +70,101 @@ export default function MainMenu({
   const [infiniteHints, setInfiniteHints] = useState<boolean>(false);
   const [wordCount, setWordCount] = useState<number>(8);
 
+  // Custom themes local state
+  const [customThemes, setCustomThemes] = useState<Record<string, string[]>>(() => {
+    try {
+      const saved = localStorage.getItem("espiando_custom_themes");
+      return saved ? JSON.parse(saved) : {};
+    } catch (e) {
+      return {};
+    }
+  });
+
+  // Custom themes editor states
+  const [editingThemeName, setEditingThemeName] = useState<string | null>(null);
+  const [newThemeNameInput, setNewThemeNameInput] = useState("");
+  const [singleWordInput, setSingleWordInput] = useState("");
+  const [bulkWordsInput, setBulkWordsInput] = useState("");
+  const [showAddThemeBox, setShowAddThemeBox] = useState(false);
+  const [newThemeNameToAdd, setNewThemeNameToAdd] = useState("");
+
+  // Individual word inline edit states
+  const [editingWordIndex, setEditingWordIndex] = useState<number | null>(null);
+  const [editingWordValue, setEditingWordValue] = useState("");
+
+  const saveCustomThemes = (updated: Record<string, string[]>) => {
+    setCustomThemes(updated);
+    localStorage.setItem("espiando_custom_themes", JSON.stringify(updated));
+  };
+
+  const handleExportCustomThemes = () => {
+    if (Object.keys(customThemes).length === 0) {
+      alert("Não há temas personalizados para exportar.");
+      return;
+    }
+    let txt = "";
+    Object.keys(customThemes).forEach(themeName => {
+      const words = customThemes[themeName];
+      txt += `${themeName};${words.join(";")}\n`;
+    });
+    
+    try {
+      const blob = new Blob([txt], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "temas_personalizados_espiando.txt";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert("Falha ao exportar temas: " + err);
+    }
+  };
+
+  const handleImportCustomThemes = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result as string;
+      if (!content) return;
+
+      const lines = content.split("\n");
+      const updatedThemes = { ...customThemes };
+
+      let importCount = 0;
+      lines.forEach(line => {
+        if (!line.trim()) return;
+        const parts = line.split(";").map(p => p.trim());
+        const themeName = parts[0];
+        if (!themeName) return;
+
+        // Parse list of words
+        const words = parts.slice(1)
+          .map(w => cleanWord(w))
+          .filter(w => w.length >= 4 && w.length <= 20);
+
+        if (words.length > 0 || parts.length > 1) {
+          updatedThemes[themeName] = Array.from(new Set([...(updatedThemes[themeName] || []), ...words]));
+          importCount++;
+        }
+      });
+
+      if (importCount > 0) {
+        saveCustomThemes(updatedThemes);
+        alert(`${importCount} tema(s) importado(s) com sucesso!`);
+      } else {
+        alert("Nenhum tema válido encontrado no arquivo. Verifique o formato (.txt delimitado por ';').");
+      }
+    };
+    reader.readAsText(file);
+    // Reset file input so user can choose same file again if desired
+    e.target.value = "";
+  };
+
   // Online connectivity detection
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
@@ -236,6 +331,282 @@ export default function MainMenu({
             <ArrowRight className="w-4 h-4 text-slate-600 dark:text-slate-300" />
           </button>
         </div>
+      ) : editingThemeName !== null ? (
+        /* EDITING CUSTOM THEME PANEL */
+        <div className="space-y-5 mt-2 animate-fade-in text-slate-800 dark:text-slate-200">
+          <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-805 pb-3 flex-wrap gap-2">
+            <div>
+              <span className="text-[10px] text-slate-550 dark:text-slate-400 uppercase tracking-wider font-extrabold block">Gerenciar Tema</span>
+              <h2 className="text-lg font-bold text-slate-850 dark:text-white flex items-center gap-1.5 leading-none">
+                <span className="text-blue-500">⚙</span> {editingThemeName}
+              </h2>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setEditingThemeName(null);
+                setEditingWordIndex(null);
+              }}
+              className="px-3 py-1.5 text-xs bg-slate-205 dark:bg-slate-800 text-slate-800 dark:text-slate-100 hover:bg-slate-300 dark:hover:bg-slate-700 font-bold rounded-lg cursor-pointer transition-all"
+            >
+              Voltar ao Menu
+            </button>
+          </div>
+
+          {/* Opção de Renomear o Tema */}
+          <div className="bg-slate-50 dark:bg-slate-800/40 p-3 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2">
+            <label className="text-[10px] uppercase font-bold text-slate-700 dark:text-slate-300 block">Renomear este Tema:</label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                className="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-750 p-2 text-xs rounded-lg text-slate-805 dark:text-slate-105 outline-none focus:border-blue-500 font-bold"
+                value={newThemeNameInput}
+                onChange={(e) => setNewThemeNameInput(e.target.value)}
+                maxLength={24}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const trimmedNewName = newThemeNameInput.trim();
+                  if (!trimmedNewName || trimmedNewName === editingThemeName) return;
+                  if (customThemes[trimmedNewName] || DEFAULT_THEMES.includes(trimmedNewName.toUpperCase())) {
+                    alert("Já existe um tema nativo ou personalizado com este nome.");
+                    return;
+                  }
+                  
+                  const updated = { ...customThemes };
+                  updated[trimmedNewName] = updated[editingThemeName!];
+                  delete updated[editingThemeName!];
+                  saveCustomThemes(updated);
+                  setEditingThemeName(trimmedNewName);
+                  if (selectedTheme === editingThemeName) {
+                    setSelectedTheme(trimmedNewName);
+                  }
+                }}
+                className="px-3.5 py-2 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold cursor-pointer transition-all shrink-0"
+              >
+                Renomear
+              </button>
+            </div>
+          </div>
+
+          {/* Adicionar palavras */}
+          <div className="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-3">
+            <div>
+              <label className="text-[10px] uppercase font-bold text-slate-700 dark:text-slate-300 block mb-1">Incluir Palavra Individual:</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Ex: BANANA, UVA, MELANCIA..."
+                  className="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-750 p-2 text-xs rounded-lg text-slate-805 dark:text-slate-105 outline-none focus:border-blue-500 font-bold"
+                  value={singleWordInput}
+                  onChange={(e) => setSingleWordInput(e.target.value)}
+                  maxLength={15}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      const wordClean = cleanWord(singleWordInput);
+                      if (!wordClean) return;
+                      if (wordClean.length < 4 || wordClean.length > 15) {
+                        alert("Palavras devem ter entre 4 e 15 letras.");
+                        return;
+                      }
+                      const currentList = customThemes[editingThemeName!] || [];
+                      if (currentList.includes(wordClean)) {
+                        alert("Esta palavra já existe neste tema.");
+                        return;
+                      }
+                      saveCustomThemes({
+                        ...customThemes,
+                        [editingThemeName!]: [...currentList, wordClean]
+                      });
+                      setSingleWordInput("");
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const wordClean = cleanWord(singleWordInput);
+                    if (!wordClean) return;
+                    if (wordClean.length < 4 || wordClean.length > 15) {
+                      alert("Palavras devem ter entre 4 e 15 letras.");
+                      return;
+                    }
+                    const currentList = customThemes[editingThemeName!] || [];
+                    if (currentList.includes(wordClean)) {
+                      alert("Esta palavra já existe neste tema.");
+                      return;
+                    }
+                    saveCustomThemes({
+                      ...customThemes,
+                      [editingThemeName!]: [...currentList, wordClean]
+                    });
+                    setSingleWordInput("");
+                  }}
+                  className="px-3.5 py-2 text-xs bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold cursor-pointer transition-all shrink-0"
+                >
+                  Adicionar
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[10px] uppercase font-bold text-slate-700 dark:text-slate-300 block mb-1">Colar palavras em grupo (delimitadas por ponto e vírgula, vírgula ou linhas):</label>
+              <textarea
+                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-750 p-2 text-xs rounded-lg text-slate-805 dark:text-slate-105 placeholder-slate-400 outline-none focus:border-blue-500 font-bold"
+                placeholder="Cole um bloco de texto com as palavras aqui. Pode estar separado por vírgula, ponto e vírgula, espaço ou uma em cada linha!"
+                rows={3}
+                value={bulkWordsInput}
+                onChange={(e) => setBulkWordsInput(e.target.value)}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const rawWords = bulkWordsInput.split(/[\s,;\n\r]+/);
+                  const validWords: string[] = [];
+                  rawWords.forEach(rw => {
+                    const w = cleanWord(rw);
+                    if (w.length >= 4 && w.length <= 15) {
+                      validWords.push(w);
+                    }
+                  });
+
+                  if (validWords.length === 0) {
+                    alert("Nenhuma palavra válida de 4 a 15 letras encontrada para importar.");
+                    return;
+                  }
+
+                  const currentList = customThemes[editingThemeName!] || [];
+                  const merged = Array.from(new Set([...currentList, ...validWords]));
+                  saveCustomThemes({
+                    ...customThemes,
+                    [editingThemeName!]: merged
+                  });
+                  setBulkWordsInput("");
+                  alert(`${validWords.length} nova(s) palavra(s) adicionada(s) com sucesso.`);
+                }}
+                className="mt-1.5 w-full py-1.5 text-xs bg-slate-750 dark:bg-slate-800 text-slate-100 hover:bg-slate-700 rounded-lg font-bold cursor-pointer transition-all"
+              >
+                Importar Palavras em Bloco
+              </button>
+            </div>
+          </div>
+
+          {/* Lista de palavras cadastradas */}
+          <div className="space-y-1.5">
+            <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center justify-between">
+              <span>Palavras Cadastradas ({(customThemes[editingThemeName!] || []).length}):</span>
+              <button
+                type="button"
+                onClick={() => {
+                  const confirmClear = window.confirm("Excluir todas as palavras deste tema?");
+                  if (confirmClear) {
+                    saveCustomThemes({
+                      ...customThemes,
+                      [editingThemeName!]: []
+                    });
+                  }
+                }}
+                className="text-[10px] text-red-500 hover:underline font-bold cursor-pointer"
+              >
+                Limpar Tudo
+              </button>
+            </h3>
+
+            <div className="border border-slate-200 dark:border-slate-800 rounded-xl max-h-56 overflow-y-auto p-2 bg-slate-50/50 dark:bg-slate-900/30 no-scrollbar">
+              {(customThemes[editingThemeName!] || []).length === 0 ? (
+                <p className="text-xs text-slate-500 text-center py-4">Nenhuma palavra cadastrada neste tema. Adicione acima!</p>
+              ) : (
+                <div className="flex flex-wrap gap-1.5">
+                  {(customThemes[editingThemeName!] || []).map((word, wordIdx) => {
+                    const isWordEditing = editingWordIndex === wordIdx;
+                    return (
+                      <div
+                        key={wordIdx}
+                        className="flex items-center gap-1.5 px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 rounded-lg text-xs font-mono font-bold text-slate-700 dark:text-slate-200 shadow-sm animate-fade-in"
+                      >
+                        {isWordEditing ? (
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="text"
+                              value={editingWordValue}
+                              onChange={(e) => setEditingWordValue(e.target.value)}
+                              className="w-20 bg-slate-100 dark:bg-slate-950 px-1 py-0.2 rounded border border-slate-350 text-[11px] font-bold text-slate-850 dark:text-white uppercase"
+                              maxLength={15}
+                              autoFocus
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const cleaned = cleanWord(editingWordValue);
+                                if (!cleaned || cleaned.length < 4 || cleaned.length > 15) {
+                                  alert("A palavra precisa ter entre 4 e 15 letras.");
+                                  return;
+                                }
+                                const currentList = [...(customThemes[editingThemeName!] || [])];
+                                currentList[wordIdx] = cleaned;
+                                saveCustomThemes({
+                                  ...customThemes,
+                                  [editingThemeName!]: Array.from(new Set(currentList))
+                                });
+                                setEditingWordIndex(null);
+                              }}
+                              className="text-green-600 hover:text-green-800 font-bold"
+                              title="Salvar"
+                            >
+                              ✓
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditingWordIndex(null)}
+                              className="text-red-500 hover:text-red-700 font-bold"
+                              title="Cancelar"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <span className="uppercase">{word}</span>
+                            <div className="flex items-center gap-1 border-l border-slate-150 pl-1">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingWordIndex(wordIdx);
+                                  setEditingWordValue(word);
+                                }}
+                                className="text-slate-400 hover:text-blue-500 text-[10px] cursor-pointer"
+                                title="Editar palavra"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const currentList = [...(customThemes[editingThemeName!] || [])];
+                                  currentList.splice(wordIdx, 1);
+                                  saveCustomThemes({
+                                    ...customThemes,
+                                    [editingThemeName!]: currentList
+                                  });
+                                }}
+                                className="text-red-400 hover:text-red-650 text-[10px] cursor-pointer"
+                                title="Excluir"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       ) : (
         <div className="space-y-4 mt-2 animate-fade-in text-slate-800 dark:text-slate-200">
           
@@ -331,24 +702,175 @@ export default function MainMenu({
 
           {/* Mode 1 Layout */}
           {mode === "theme" ? (
-            <div className="space-y-3 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
+            <div className="space-y-4 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
               <div className="space-y-1.5">
                 <label className="text-[10px] text-slate-700 dark:text-slate-300 uppercase tracking-widest block font-bold">Escolha uma Categoria Nativa:</label>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-1.5 max-h-40 overflow-y-auto pr-1 no-scrollbar border border-slate-200 dark:border-slate-700 rounded-lg p-2 bg-white dark:bg-slate-900/40">
                   {DEFAULT_THEMES.map((t) => (
                     <button
                       key={t}
-                      onClick={() => setSelectedTheme(t)}
+                      onClick={() => {
+                        setSelectedTheme(t);
+                        setIsCustomThemeSelected(false);
+                      }}
                       className={`py-1.5 px-2 rounded-lg text-xs text-left font-semibold capitalize truncate transition-all cursor-pointer border ${
-                        selectedTheme === t
-                          ? "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30"
-                          : "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700"
+                        selectedTheme === t && !isCustomThemeSelected
+                          ? "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30 font-bold"
+                          : "bg-slate-100 dark:bg-slate-850 text-slate-800 dark:text-slate-200 border-slate-300/40 dark:border-slate-750 hover:bg-slate-200 dark:hover:bg-slate-700"
                       }`}
                     >
-                      {selectedTheme === t && "✓ "} {t.toLowerCase()}
+                      {selectedTheme === t && !isCustomThemeSelected && "✓ "} {t.toLowerCase()}
                     </button>
                   ))}
                 </div>
+              </div>
+
+              {/* Seção de Temas Criados pelo Usuário */}
+              <div className="space-y-2 pt-2 border-t border-slate-250 dark:border-slate-800/80">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <label className="text-[10px] text-slate-700 dark:text-slate-300 uppercase tracking-widest block font-bold">Seus Temas Personalizados:</label>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={handleExportCustomThemes}
+                      className="px-2 py-0.5 text-[9px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-350 hover:bg-slate-200 dark:hover:bg-slate-705 rounded border border-slate-250 dark:border-slate-700 font-bold cursor-pointer transition-all"
+                      title="Salvar temas em arquivo .txt"
+                    >
+                      Exportar
+                    </button>
+                    <label className="px-2 py-0.5 text-[9px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-350 hover:bg-slate-200 dark:hover:bg-slate-705 rounded border border-slate-250 dark:border-slate-700 font-bold cursor-pointer transition-all flex items-center justify-center gap-0.5">
+                      Importar
+                      <input
+                        type="file"
+                        accept=".txt"
+                        className="hidden"
+                        onChange={handleImportCustomThemes}
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                {Object.keys(customThemes).length === 0 ? (
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 text-center py-3 bg-white dark:bg-slate-900/10 rounded-lg border border-dashed border-slate-200 dark:border-slate-800">
+                    Nenhum tema personalizado criado. Clique em "Criar Novo Tema" abaixo para começar!
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-40 overflow-y-auto pr-1 no-scrollbar p-1">
+                    {Object.keys(customThemes).map((themeName) => {
+                      const isSelected = selectedTheme === themeName;
+                      const countWords = customThemes[themeName]?.length || 0;
+                      return (
+                        <div
+                          key={themeName}
+                          className={`flex items-center justify-between p-1.5 rounded-lg border text-xs gap-1.5 transition-all ${
+                            isSelected
+                              ? "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-450 border-blue-500/40"
+                              : "bg-white dark:bg-slate-900/30 text-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-800"
+                          }`}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedTheme(themeName);
+                              setIsCustomThemeSelected(false); // loads words as standard theme
+                            }}
+                            className="flex-1 text-left font-bold truncate cursor-pointer text-[12px] flex items-center gap-1 text-slate-850 dark:text-slate-200"
+                          >
+                            <span>{isSelected ? "✓" : "•"}</span>
+                            <span className="truncate">{themeName}</span>
+                            <span className="text-[9px] text-slate-400 dark:text-slate-500 font-normal">({countWords} w.)</span>
+                          </button>
+                          
+                          <div className="flex items-center gap-0.5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingThemeName(themeName);
+                                setNewThemeNameInput(themeName);
+                              }}
+                              className="p-1 hover:bg-slate-100 dark:hover:bg-slate-850 text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-all cursor-pointer"
+                              title="Editar palavras do tema"
+                            >
+                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const confirmDelete = window.confirm(`Deseja realmente excluir o tema "${themeName}"?`);
+                                if (!confirmDelete) return;
+                                const updated = { ...customThemes };
+                                delete updated[themeName];
+                                saveCustomThemes(updated);
+                                if (selectedTheme === themeName) {
+                                  setSelectedTheme("ANIMAIS");
+                                }
+                              }}
+                              className="p-1 hover:bg-slate-100 dark:hover:bg-slate-850 text-red-500 hover:text-red-700 rounded transition-all cursor-pointer"
+                              title="Excluir este tema"
+                            >
+                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Bloco de criar novo tema */}
+                {showAddThemeBox ? (
+                  <div className="flex gap-1.5 items-center bg-slate-100 dark:bg-slate-800/40 p-2 rounded-lg border border-slate-200 dark:border-slate-800/70 animate-fade-in">
+                    <input
+                      type="text"
+                      placeholder="Nome do novo tema..."
+                      value={newThemeNameToAdd}
+                      onChange={(e) => setNewThemeNameToAdd(e.target.value)}
+                      maxLength={24}
+                      className="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded py-1 px-2.5 text-xs text-slate-800 dark:text-white outline-none focus:border-blue-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const nameTrimmed = newThemeNameToAdd.trim();
+                        if (!nameTrimmed) return;
+                        if (customThemes[nameTrimmed] || DEFAULT_THEMES.includes(nameTrimmed.toUpperCase())) {
+                          alert("Já existe um tema nativo ou personalizado com este nome.");
+                          return;
+                        }
+                        const updated = { ...customThemes, [nameTrimmed]: [] };
+                        saveCustomThemes(updated);
+                        setNewThemeNameToAdd("");
+                        setShowAddThemeBox(false);
+                        setSelectedTheme(nameTrimmed);
+                      }}
+                      className="px-2.5 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded font-bold cursor-pointer transition-all"
+                    >
+                      Salvar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNewThemeNameToAdd("");
+                        setShowAddThemeBox(false);
+                      }}
+                      className="px-2.5 py-1 text-xs bg-slate-200 dark:bg-slate-700 hover:bg-slate-305 text-slate-800 dark:text-slate-100 rounded font-bold cursor-pointer transition-all"
+                    >
+                      Voltar
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setShowAddThemeBox(true)}
+                    className="w-full py-1.5 px-3 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/40 text-xs font-bold transition-all flex items-center justify-center gap-1 hover:text-blue-650 cursor-pointer"
+                  >
+                    + Criar Novo Tema Personalizado
+                  </button>
+                )}
               </div>
             </div>
           ) : (

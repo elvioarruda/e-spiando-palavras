@@ -200,91 +200,130 @@ export default function App() {
     setStats(nextStats);
     localStorage.setItem("caca_palavras_stats", JSON.stringify(nextStats));
 
+    // Load custom themes from localStorage
+    let customThemes: Record<string, string[]> = {};
+    try {
+      const saved = localStorage.getItem("espiando_custom_themes");
+      customThemes = saved ? JSON.parse(saved) : {};
+    } catch (e) {
+      customThemes = {};
+    }
+
+    const gridSize = config.difficulty === "facil" ? 10 : config.difficulty === "medio" ? 15 : 20;
+    let candidatePool: string[] = [];
+
     // Mode 2: Custom lists
     if (config.mode === "custom") {
       setIsCustom(true);
       setThemeName("Lista Personalizada");
-      
-      // Shuffle & keep unique custom words
-      let finalWords = [...config.customWords].sort(() => 0.5 - Math.random());
-      
-      if (finalWords.length > wordCount) {
-        finalWords = finalWords.slice(0, wordCount);
-      } else if (finalWords.length < wordCount) {
-        // Need to pad. Gather all words from local themes
-        const themesKeys = Object.keys(embeddedThemes);
-        const allWordsPool: string[] = [];
-        themesKeys.forEach(tKey => {
-          allWordsPool.push(...embeddedThemes[tKey]);
-        });
-        
-        // Clean, shuffle and get unique new words that are not already present
-        const cleanedPool = Array.from(new Set(allWordsPool.map(w => cleanWord(w))))
-          .filter(w => w.length >= 4 && w.length <= 15 && !finalWords.includes(w))
-          .sort(() => 0.5 - Math.random());
-          
-        const needed = wordCount - finalWords.length;
-        const paddingWords = cleanedPool.slice(0, needed);
-        finalWords = [...finalWords, ...paddingWords];
-      }
-      
-      const result = generateGrid(finalWords, config.difficulty);
-      setActiveGrid(result.grid);
-      setActiveWords(result.wordStates);
-      setScreen("playing");
-      AudioSynthesizer.playSelect();
-      return;
-    }
-
-    // Mode 1: Theme based
-    setIsCustom(false);
-    const themeUpper = config.themeName.toUpperCase().trim();
-
-    // Check if the theme is native vs custom
-    // To match native themes properly, let's normalize keys
-    const nativeKeysNorm = Object.keys(embeddedThemes).reduce((acc, key) => {
-      const normKey = key.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
-      acc[normKey] = key;
-      return acc;
-    }, {} as Record<string, string>);
-
-    const matchedNativeKey = nativeKeysNorm[themeUpper];
-
-    if (matchedNativeKey) {
-      // Load standard native built-in words totally offline
-      const wordsPool = getSampleWords(matchedNativeKey, wordCount);
-      setThemeName(matchedNativeKey);
-      
-      const result = generateGrid(wordsPool, config.difficulty);
-      setActiveGrid(result.grid);
-      setActiveWords(result.wordStates);
-      setScreen("playing");
-      AudioSynthesizer.playSelect();
+      candidatePool = config.customWords;
     } else {
-      // Find a semantic match from our embedded themes entirely offline!
-      const matchedTheme = matchOfflineTheme(config.themeName);
-      let wordsPool: string[] = [];
-      let finalThemeName = config.themeName;
+      // Mode 1: Theme based
+      setIsCustom(false);
+      const themeUpper = config.themeName.toUpperCase().trim();
 
-      if (matchedTheme) {
-        wordsPool = getSampleWords(matchedTheme, wordCount);
-        finalThemeName = `${config.themeName.toUpperCase()} (${matchedTheme})`;
+      // Check if the theme is native vs custom
+      // To match native themes properly, let's normalize keys
+      const nativeKeysNorm = Object.keys(embeddedThemes).reduce((acc, key) => {
+        const normKey = key.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+        acc[normKey] = key;
+        return acc;
+      }, {} as Record<string, string>);
+
+      // Normalize custom keys
+      const customKeysNorm = Object.keys(customThemes).reduce((acc, key) => {
+        const normKey = key.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+        acc[normKey] = key;
+        return acc;
+      }, {} as Record<string, string>);
+
+      const matchedNativeKey = nativeKeysNorm[themeUpper];
+      const matchedCustomKey = customKeysNorm[themeUpper];
+
+      if (matchedCustomKey) {
+        candidatePool = customThemes[matchedCustomKey] || [];
+        setThemeName(matchedCustomKey);
+      } else if (matchedNativeKey) {
+        // Load standard native built-in words totally offline
+        candidatePool = embeddedThemes[matchedNativeKey] || [];
+        setThemeName(matchedNativeKey);
       } else {
-        // Fallback to random theme if nothing has matched
-        const themesList = Object.keys(embeddedThemes);
-        const randomTheme = themesList[Math.floor(Math.random() * themesList.length)];
-        wordsPool = getSampleWords(randomTheme, wordCount);
-        finalThemeName = `${config.themeName.toUpperCase()} (${randomTheme})`;
-      }
+        // Find a semantic match from our embedded themes entirely offline!
+        const matchedTheme = matchOfflineTheme(config.themeName);
+        let finalThemeName = config.themeName;
 
-      setThemeName(finalThemeName);
-      
-      const result = generateGrid(wordsPool, config.difficulty);
-      setActiveGrid(result.grid);
-      setActiveWords(result.wordStates);
-      setScreen("playing");
-      AudioSynthesizer.playSelect();
+        if (matchedTheme) {
+          candidatePool = embeddedThemes[matchedTheme] || [];
+          finalThemeName = `${config.themeName.toUpperCase()} (${matchedTheme})`;
+        } else {
+          // Check if matches any custom theme by simple substring
+          const customThemeKeys = Object.keys(customThemes);
+          const foundCustom = customThemeKeys.find(k => k.toUpperCase().includes(themeUpper));
+          if (foundCustom) {
+            candidatePool = customThemes[foundCustom] || [];
+            finalThemeName = foundCustom;
+          } else {
+            // Fallback to random theme if nothing has matched
+            const themesList = Object.keys(embeddedThemes);
+            const randomTheme = themesList[Math.floor(Math.random() * themesList.length)];
+            candidatePool = embeddedThemes[randomTheme] || [];
+            finalThemeName = `${config.themeName.toUpperCase()} (${randomTheme})`;
+          }
+        }
+        setThemeName(finalThemeName);
+      }
     }
+
+    // Process, clean, filter based on gridSize, unique words
+    let processedCandidates = Array.from(
+      new Set(
+        candidatePool
+          .map(w => cleanWord(w))
+          .filter(w => w.length >= 4 && w.length <= gridSize)
+      )
+    ).sort(() => 0.5 - Math.random());
+
+    // If we have fewer than wordCount, pad from default native pool
+    if (processedCandidates.length < wordCount) {
+      const allNativeWords: string[] = [];
+      Object.keys(embeddedThemes).forEach(k => {
+        allNativeWords.push(...embeddedThemes[k]);
+      });
+      Object.keys(customThemes).forEach(k => {
+        allNativeWords.push(...customThemes[k]);
+      });
+
+      const cleanPadding = Array.from(
+        new Set(
+          allNativeWords
+            .map(w => cleanWord(w))
+            .filter(w => w.length >= 4 && w.length <= gridSize && !processedCandidates.includes(w))
+        )
+      ).sort(() => 0.5 - Math.random());
+
+      const needed = wordCount - processedCandidates.length;
+      const padding = cleanPadding.slice(0, needed);
+      processedCandidates = [...processedCandidates, ...padding];
+    } else {
+      // Just keep exactly wordCount words
+      processedCandidates = processedCandidates.slice(0, wordCount);
+    }
+
+    // Generate grid using iterative retry to guarantee exactly wordCount words are loaded
+    let result = generateGrid(processedCandidates, config.difficulty);
+    let attempts = 0;
+    while (result.wordStates.length < wordCount && attempts < 15) {
+      attempts++;
+      // Shuffle placement order to try alternative fittings
+      processedCandidates = [...processedCandidates].sort(() => 0.5 - Math.random());
+      result = generateGrid(processedCandidates, config.difficulty);
+    }
+
+    // Set playing states
+    setActiveGrid(result.grid);
+    setActiveWords(result.wordStates);
+    setScreen("playing");
+    AudioSynthesizer.playSelect();
   };
 
   // Save current active state to cache helper
