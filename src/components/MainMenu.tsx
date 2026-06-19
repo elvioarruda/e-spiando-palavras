@@ -18,6 +18,7 @@ interface MainMenuProps {
     timingType: "jogada" | "partida";
     timingDuration: number;
     infiniteHints: boolean;
+    wordCount: number;
   }) => void;
   onSwitchScreen: (screen: "stats" | "about" | "settings") => void;
   settings: GameSettings;
@@ -67,6 +68,7 @@ export default function MainMenu({
   const [selectedDurationOption, setSelectedDurationOption] = useState<string>("60");
   const [customDuration, setCustomDuration] = useState<number>(60);
   const [infiniteHints, setInfiniteHints] = useState<boolean>(false);
+  const [wordCount, setWordCount] = useState<number>(8);
 
   // Online connectivity detection
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -147,7 +149,8 @@ export default function MainMenu({
       timingMode,
       timingType,
       timingDuration: finalTimingDuration,
-      infiniteHints
+      infiniteHints,
+      wordCount
     });
   };
 
@@ -285,6 +288,44 @@ export default function MainMenu({
               >
                 <FileText className="w-3.5 h-3.5" /> Lista Personalizada
               </button>
+            </div>
+          </div>
+
+          <div className="space-y-2 pt-1">
+            <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Quantidade de Palavras para Encontrar:</h3>
+            <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="space-y-1">
+                <span className="text-xs font-semibold text-slate-600 dark:text-slate-350 block">Determine o número de palavras escondidas</span>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 block">* Média recomendada: 8 a 25 palavras</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setWordCount(prev => Math.max(3, prev - 1))}
+                  className="w-8 h-8 rounded-lg bg-slate-200 dark:bg-slate-705 text-slate-800 dark:text-slate-100 hover:bg-slate-300 dark:hover:bg-slate-700 text-sm font-extrabold flex items-center justify-center transition-all select-none cursor-pointer"
+                >
+                  -
+                </button>
+                <input
+                  id="word-count-input"
+                  type="number"
+                  min={3}
+                  max={50}
+                  value={wordCount}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value, 10);
+                    setWordCount(isNaN(val) ? 8 : val);
+                  }}
+                  className="w-16 h-8 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm rounded-lg text-slate-800 dark:text-white outline-none focus:border-blue-500 font-mono font-bold"
+                />
+                <button
+                  type="button"
+                  onClick={() => setWordCount(prev => Math.min(50, prev + 1))}
+                  className="w-8 h-8 rounded-lg bg-slate-200 dark:bg-slate-705 text-slate-800 dark:text-slate-100 hover:bg-slate-300 dark:hover:bg-slate-700 text-sm font-extrabold flex items-center justify-center transition-all select-none cursor-pointer"
+                >
+                  +
+                </button>
+              </div>
             </div>
           </div>
 

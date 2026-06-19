@@ -460,18 +460,28 @@ export default function GameScreen({
       const unsolvedWord = unsolvedWords[hintCycleIndex % unsolvedWords.length];
 
       if (unsolvedWord && unsolvedWord.path.length > 0) {
-        // Highlight the first letter coordinate!
-        const targetCell = unsolvedWord.path[0];
+        // Encontra a primeira letra da palavra não encontrada que ainda não faz parte de nenhuma palavra solucionada.
+        // Isso evita dar uma dica sobre uma casa que o jogador já solucionou através de outro cruzamento de palavras.
+        let targetCell = unsolvedWord.path.find(pos => {
+          return !words.some(w => w.isFound && w.path.some(p => p.row === pos.row && p.col === pos.col));
+        });
+
+        // Caso todas as letras da palavra estejam cobertas por cruzamentos solucionados (cenário raro),
+        // usamos a primeira letra como padrão de segurança.
+        if (!targetCell) {
+          targetCell = unsolvedWord.path[0];
+        }
+
         setHintHighlightedCell(targetCell);
         setHintsUsed(p => p + 1);
         setHintCycleIndex(p => p + 1);
         AudioSynthesizer.playHint();
 
-        // Clear highlight after 8 seconds (or until user interacts/clicks)
+        // Clear highlight after 10 seconds (or until user interacts/clicks)
         hintTimeoutRef.current = setTimeout(() => {
           setHintHighlightedCell(null);
           hintTimeoutRef.current = null;
-        }, 8000);
+        }, 10000);
       }
     }
   };

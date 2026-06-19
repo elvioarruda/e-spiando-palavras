@@ -159,6 +159,7 @@ export default function App() {
     timingType: "jogada" | "partida";
     timingDuration: number;
     infiniteHints: boolean;
+    wordCount: number;
   }) => {
     setDifficulty(config.difficulty);
     setTimeElapsed(0);
@@ -188,10 +189,8 @@ export default function App() {
       setMultiplayerState(null);
     }
 
-    // Get expected word counts based on level
-    let wordCount = 8;
-    if (config.difficulty === "medio") wordCount = 15;
-    if (config.difficulty === "dificil") wordCount = 25;
+    // Get expected word counts based on level or custom configuration
+    const wordCount = config.wordCount;
 
     // Increment played statistical counters immediately
     const nextPlayedCount = stats.played + 1;
