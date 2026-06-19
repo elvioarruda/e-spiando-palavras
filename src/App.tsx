@@ -274,47 +274,28 @@ export default function App() {
       }
     }
 
-    // Process, clean, filter based on gridSize, unique words
+    // Process, clean, filter based on gridSize, unique words.
+    // Minimum length is 3. Max length is the gridSize of the board (10, 15, or 20).
+    // Word list is pre-filtered here so we don't pick words longer than the board size.
     let processedCandidates = Array.from(
       new Set(
         candidatePool
           .map(w => cleanWord(w))
-          .filter(w => w.length >= 4 && w.length <= gridSize)
+          .filter(w => w.length >= 3 && w.length <= gridSize)
       )
     ).sort(() => 0.5 - Math.random());
 
-    // If we have fewer than wordCount, pad from default native pool
-    if (processedCandidates.length < wordCount) {
-      const allNativeWords: string[] = [];
-      Object.keys(embeddedThemes).forEach(k => {
-        allNativeWords.push(...embeddedThemes[k]);
-      });
-      Object.keys(customThemes).forEach(k => {
-        allNativeWords.push(...customThemes[k]);
-      });
+    // Never pad with random words from other categories!
+    // If the selected category has fewer words than requested, we use only what is available.
+    const targetWordCount = Math.min(wordCount, processedCandidates.length);
+    processedCandidates = processedCandidates.slice(0, targetWordCount);
 
-      const cleanPadding = Array.from(
-        new Set(
-          allNativeWords
-            .map(w => cleanWord(w))
-            .filter(w => w.length >= 4 && w.length <= gridSize && !processedCandidates.includes(w))
-        )
-      ).sort(() => 0.5 - Math.random());
-
-      const needed = wordCount - processedCandidates.length;
-      const padding = cleanPadding.slice(0, needed);
-      processedCandidates = [...processedCandidates, ...padding];
-    } else {
-      // Just keep exactly wordCount words
-      processedCandidates = processedCandidates.slice(0, wordCount);
-    }
-
-    // Generate grid using iterative retry to guarantee exactly wordCount words are loaded
+    // Generate grid using iterative retry up to 3 times to fit as many of our chosen words as possible.
+    // If they still don't fit, we just "fica sem" (proceed with whoever did fit).
     let result = generateGrid(processedCandidates, config.difficulty);
     let attempts = 0;
-    while (result.wordStates.length < wordCount && attempts < 15) {
+    while (result.wordStates.length < targetWordCount && attempts < 3) {
       attempts++;
-      // Shuffle placement order to try alternative fittings
       processedCandidates = [...processedCandidates].sort(() => 0.5 - Math.random());
       result = generateGrid(processedCandidates, config.difficulty);
     }

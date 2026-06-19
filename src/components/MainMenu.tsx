@@ -145,7 +145,7 @@ export default function MainMenu({
         // Parse list of words
         const words = parts.slice(1)
           .map(w => cleanWord(w))
-          .filter(w => w.length >= 4 && w.length <= 20);
+          .filter(w => w.length >= 3 && w.length <= 20);
 
         if (words.length > 0 || parts.length > 1) {
           updatedThemes[themeName] = Array.from(new Set([...(updatedThemes[themeName] || []), ...words]));
@@ -213,13 +213,13 @@ export default function MainMenu({
       const tokens = rawWordListText.split(/[\s,;\n]+/);
       const cleaned = tokens
         .map(t => cleanWord(t))
-        .filter(t => t.length >= 4 && t.length <= 15);
+        .filter(t => t.length >= 3 && t.length <= 15);
       
       // Deduplicate
       finalCustomWords = Array.from(new Set(cleaned));
 
       if (finalCustomWords.length < 3) {
-        alert("Por favor, digite pelo menos 3 palavras válidas (entre 4 e 15 letras, sem acentos ou números).");
+        alert("Por favor, digite pelo menos 3 palavras válidas (entre 3 e 15 letras, sem acentos ou números).");
         return;
       }
     }
@@ -407,8 +407,8 @@ export default function MainMenu({
                       e.preventDefault();
                       const wordClean = cleanWord(singleWordInput);
                       if (!wordClean) return;
-                      if (wordClean.length < 4 || wordClean.length > 15) {
-                        alert("Palavras devem ter entre 4 e 15 letras.");
+                      if (wordClean.length < 3 || wordClean.length > 15) {
+                        alert("Palavras devem ter entre 3 e 15 letras.");
                         return;
                       }
                       const currentList = customThemes[editingThemeName!] || [];
@@ -429,8 +429,8 @@ export default function MainMenu({
                   onClick={() => {
                     const wordClean = cleanWord(singleWordInput);
                     if (!wordClean) return;
-                    if (wordClean.length < 4 || wordClean.length > 15) {
-                      alert("Palavras devem ter entre 4 e 15 letras.");
+                    if (wordClean.length < 3 || wordClean.length > 15) {
+                      alert("Palavras devem ter entre 3 e 15 letras.");
                       return;
                     }
                     const currentList = customThemes[editingThemeName!] || [];
@@ -467,13 +467,13 @@ export default function MainMenu({
                   const validWords: string[] = [];
                   rawWords.forEach(rw => {
                     const w = cleanWord(rw);
-                    if (w.length >= 4 && w.length <= 15) {
+                    if (w.length >= 3 && w.length <= 15) {
                       validWords.push(w);
                     }
                   });
 
                   if (validWords.length === 0) {
-                    alert("Nenhuma palavra válida de 4 a 15 letras encontrada para importar.");
+                    alert("Nenhuma palavra válida de 3 a 15 letras encontrada para importar.");
                     return;
                   }
 
@@ -540,8 +540,8 @@ export default function MainMenu({
                               type="button"
                               onClick={() => {
                                 const cleaned = cleanWord(editingWordValue);
-                                if (!cleaned || cleaned.length < 4 || cleaned.length > 15) {
-                                  alert("A palavra precisa ter entre 4 e 15 letras.");
+                                if (!cleaned || cleaned.length < 3 || cleaned.length > 15) {
+                                  alert("A palavra precisa ter entre 3 e 15 letras.");
                                   return;
                                 }
                                 const currentList = [...(customThemes[editingThemeName!] || [])];

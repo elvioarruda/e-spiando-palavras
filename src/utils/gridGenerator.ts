@@ -74,7 +74,7 @@ export function generateGrid(
         .replace(/[^A-Z]/g, "")
         .trim()
     )
-    .filter(w => w.length >= 4 && w.length <= size);
+    .filter(w => w.length >= 3 && w.length <= size);
 
   // Remove duplicates
   cleanWords = Array.from(new Set(cleanWords));
